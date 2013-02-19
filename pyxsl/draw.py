@@ -5,6 +5,7 @@ import os
 import logging
 
 import config
+from parse import get_xsls_in_dir
 
 
 def create_graph():
@@ -29,15 +30,41 @@ def render_graph(graph, name):
     logging.debug('End')
 
 
-def draw_inside(data, start_dir):
+def draw_inside(data, search_files=None, start_dir=None, filename='inside'):
+    def draw_related(data, files, drawn_nodes, drawn_edges):
+        for xsl_file in files:
+            file_data = data.get(xsl_file)
+            if file_data is None:
+                continue
+
+            if xsl_file not in drawn_nodes:
+                gv.node(graph, '{0}'.format(os.path.relpath(xsl_file, config.ROOT_DIR)))
+                drawn_nodes.append(xsl_file)
+
+            imports = file_data.get('imports')
+            if not imports:
+                continue
+
+            for xsl_import in imports:
+                if (xsl_file, xsl_import) not in drawn_edges:
+                    gv.edge(graph, os.path.relpath(xsl_file, config.ROOT_DIR), os.path.relpath(xsl_import, config.ROOT_DIR))
+                    drawn_edges.append((xsl_file, xsl_import))
+
+            draw_related(data, imports, drawn_nodes, drawn_edges)
+
     graph = create_graph()
 
-    for _, props in data.iteritems():
-        gv.node(graph, '{0}  ({1})'.format(props.get('short_path'), props.get('stars')))
-        for imp in props.get('imports'):
-            gv.edge(graph, props.get('short_path'), os.path.relpath(imp, start_dir))
+    files = []
 
-    render_graph(graph, 'inside.svg')
+    if search_files is not None:
+        files += search_files
+
+    if start_dir is not None:
+        files += get_xsls_in_dir(start_dir)
+
+    draw_related(data, files, [], [])
+
+    render_graph(graph, '{0}.svg'.format(filename))
 
 
 def draw_outside(index, search_files=None, start_dir=None):

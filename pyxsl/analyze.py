@@ -31,15 +31,18 @@ def extend_one_file_templates(file_name, data_dict):
 
 
 
-def get_all_imports(name, data_dict):
+def get_all_file_imports(name, data_dict):
     single_file_data = data_dict.get(name, {})
-    keys = single_file_data.get('keys', [])
-    return keys + list(chain.from_iterable(get_all_imports(import_name, data_dict) for import_name in single_file_data.get('imports', [])))
+    keys = single_file_data.get('imports', [])
+    return keys + list(chain.from_iterable(get_all_file_imports(import_name, data_dict) for import_name in single_file_data.get('imports', [])))
 
 
-def analyze_keys(data_dict):
-    result_keys = defaultdict(list)
+def analyze_imports(data_dict):
+    result = defaultdict(dict)
     for file_name in data_dict:
-        result_keys[file_name] = get_all_imports(file_name, data_dict)
-
-    print sorted(result_keys.iteritems(), key=lambda x: len(x[1]))[-1:][0]
+        temp = defaultdict(int)
+        for imported_file in get_all_file_imports(file_name, data_dict):
+            temp[imported_file] += 1
+            if temp[imported_file] > 4:
+                result[file_name][imported_file] = temp[imported_file]
+    return result

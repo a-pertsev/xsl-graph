@@ -4,12 +4,15 @@ import os
 import logging
 
 from lxml import etree
+from collections import defaultdict
 
 import config
 
 XSL_NS = "{http://www.w3.org/1999/XSL/Transform}"
 
 
+def get_xsls_in_dir(dirname):
+    return [os.path.join(dir,file) for dir,_,files in os.walk(dirname) for file in files if 'xsl' in file]
 
 def parse_file(xsl_file_name, get_imports, get_templates, modes_dict, from_file, get_keys):
     result = {}
@@ -19,7 +22,7 @@ def parse_file(xsl_file_name, get_imports, get_templates, modes_dict, from_file,
     tree = etree.parse(xsl_file_name)
     if get_imports is True:
         current_dir = os.path.dirname(xsl_file_name)
-        imports=[os.path.abspath(os.path.join(current_dir, i.get('href'))) for i in tree.findall(XSL_NS + 'import')]
+        imports = [os.path.abspath(os.path.join(current_dir, i.get('href'))) for i in tree.findall(XSL_NS + 'import')]
         result.update(imports=imports)
     if get_templates is True:
         templates = tree.findall(XSL_NS + 'template[@match]')
@@ -56,7 +59,7 @@ def get_data(start_files=[], start_dir=None):
     root_dir = start_dir or config.ROOT_DIR
 
     if start_dir is not None:
-        files = files + [os.path.join(dir,file) for dir,_,files in os.walk(start_dir) for file in files if 'xsl' in file]
+        files = files + get_xsls_in_dir(start_dir)
 
     logging.debug('Dirs data collecting...')
     data = dict(parse_files(root_dir, files))
@@ -68,14 +71,11 @@ def get_data_and_index(start_files=[], start_dir=None):
 
     data = get_data(start_files, start_dir)
 
-    index = {}
+    index = defaultdict(list)
 
     for file, stats in data.iteritems():
         for imp in stats.get('imports'):
-            if imp not in index:
-                index[imp] = [file]
-            else:
-                index[imp].append(file)
+            index[imp].append(file)
 
     return data, index
 
