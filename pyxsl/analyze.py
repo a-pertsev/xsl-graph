@@ -2,6 +2,7 @@
 
 from itertools import chain
 from collections import defaultdict
+from operator import itemgetter
 
 
 def extend_one_file_templates(file_name, data_dict):
@@ -46,3 +47,14 @@ def analyze_imports(data_dict):
             if temp[imported_file] > 4:
                 result[file_name][imported_file] = temp[imported_file]
     return result
+
+def analyze_modes_usage(data_dict):
+    result = defaultdict(int)
+
+    for file_name in data_dict:
+        for mode in data_dict[file_name].get('applied_modes'):
+            result[mode] += 1
+
+    result = sorted(result.iteritems(), key=itemgetter(1))
+    return result
+
