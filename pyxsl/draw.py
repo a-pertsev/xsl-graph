@@ -30,7 +30,7 @@ def render_graph(graph, name):
     logging.debug('End')
 
 
-def draw_inside(data, search_files=None, start_dir=None, filename='inside'):
+def draw_inside(data, search_files=None, draw_dir=None, filename='inside'):
     def draw_related(data, files, drawn_nodes, drawn_edges):
         for xsl_file in files:
             file_data = data.get(xsl_file)
@@ -59,17 +59,16 @@ def draw_inside(data, search_files=None, start_dir=None, filename='inside'):
     if search_files is not None:
         files += search_files
 
-    if start_dir is not None:
-        files += get_xsls_in_dir(start_dir)
+    if draw_dir is not None:
+        files += get_xsls_in_dir(draw_dir)
 
     draw_related(data, files, [], [])
 
     render_graph(graph, '{0}.svg'.format(filename))
 
 
-def draw_outside(index, search_files=None, start_dir=None):
+def draw_outside(index, search_files=None, draw_dir=None):
     def draw_related(index, search_files, drawn_nodes, drawn_edges):
-
         for search_file in search_files:
             imported_by = index.get(search_file)
             if imported_by is None:
@@ -95,12 +94,25 @@ def draw_outside(index, search_files=None, start_dir=None):
 
     if search_files is not None:
         draw_related(index, search_files, [], [])
-
+    elif draw_dir is not None:
+        draw_related(index, get_xsls_in_dir(draw_dir), [], [])
     else:
         for file_name, imported_by in index.iteritems():
             gv.node(graph, '{0}'.format(file_name))
             for imp in set(imported_by):
-                gv.edge(graph, os.path.relpath(file_name, start_dir), os.path.relpath(imp, start_dir))
+                gv.edge(graph, os.path.relpath(file_name, config.ROOT_DIR), os.path.relpath(imp, config.ROOT_DIR))
 
 
     render_graph(graph, 'outside.svg')
+
+
+def complete_search(data, index, search_files=[], draw_dir=None):
+    draw_inside(data,
+                draw_dir=draw_dir,
+                search_files=search_files
+    )
+
+    draw_outside(index,
+                 draw_dir=draw_dir,
+                 search_files=search_files,
+    )

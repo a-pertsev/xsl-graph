@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import os
+import subprocess
+
 from itertools import chain
 from collections import defaultdict
 from operator import itemgetter
+from copy import deepcopy
 
 
 def extend_one_file_templates(file_name, data_dict):
@@ -58,3 +62,23 @@ def analyze_modes_usage(data_dict):
     result = sorted(result.iteritems(), key=itemgetter(1))
     return result
 
+
+def get_not_used_xsls(data, index):
+        data = deepcopy(data)
+
+        del data['/home/apertsev/workspace/hh.sites.main/xhh/xsl/hh-precompile.xsl']
+
+        res = [f for f in data if f not in index]
+        res = map(lambda path: os.path.relpath(path, '/home/apertsev/workspace/hh.sites.main/xhh/xsl').split('/', 1)[-1], res)
+
+        os.chdir('/home/apertsev/workspace/hh.sites.main')
+
+        empty = []
+
+        for xsl in sorted(list(set(res))):
+            try:
+                subprocess.check_output(['fgrep', '-R', '--exclude-dir=\.git', '--exclude-dir=\.idea', xsl, '.'])
+            except:
+                empty.append(xsl)
+
+        return empty
