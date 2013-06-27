@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import os.path
 import simplejson
 from functools import partial
 from itertools import chain, imap, groupby
@@ -32,9 +33,11 @@ class MainHandler(tornado.web.RequestHandler):
 
 class SvgHandler(tornado.web.RequestHandler):
     def get(self):
+        file = self.get_argument('file', 'hh/blocks/page.xsl')
 
-        x = draw_inside(data = data_cache.data,
-                    draw_dir=config.ROOT_DIR + '/hh/catalog',
+        x = draw_inside(
+            data=data_cache.data,
+            search_files=[str(os.path.join(config.ROOT_DIR, file))]
         )
 
     #    y = draw_outside(index,
