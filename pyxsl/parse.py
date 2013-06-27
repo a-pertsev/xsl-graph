@@ -52,7 +52,7 @@ def parse_files(start_dir, file_list, get_imports=True, get_templates=False, get
         yield (file_name, parse_results)
 
 
-def get_data(start_files=[], start_dir=None):
+def get_data(start_files=[], start_dir=config.ROOT_DIR):
     logging.debug('Parsing dirs...')
     files = start_files[:]
 
@@ -67,7 +67,7 @@ def get_data(start_files=[], start_dir=None):
     return data
 
 
-def get_data_and_index(start_files=[], start_dir=None):
+def get_data_and_index(start_files=[], start_dir=config.ROOT_DIR):
 
     data = get_data(start_files, start_dir)
 

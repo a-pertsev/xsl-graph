@@ -22,15 +22,17 @@ def create_graph():
     return graph
 
 
-def render_graph(graph, name):
+def render_graph(graph):
     logging.debug('Drawing graph...')
     gv.layout(graph, 'dot')
-    gv.render(graph, 'svg', os.path.join(config.RESULTS_DIR, name))
-
+    data = gv.renderdata(graph, 'svg')
     logging.debug('End')
+    return data
+    #gv.render(graph, 'svg', os.path.join(config.RESULTS_DIR, name))
 
 
-def draw_inside(data, search_files=None, draw_dir=None, filename='inside'):
+
+def draw_inside(data, search_files=None, draw_dir=None):
     def draw_related(data, files, drawn_nodes, drawn_edges):
         for xsl_file in files:
             file_data = data.get(xsl_file)
@@ -64,7 +66,7 @@ def draw_inside(data, search_files=None, draw_dir=None, filename='inside'):
 
     draw_related(data, files, [], [])
 
-    render_graph(graph, '{0}.svg'.format(filename))
+    return render_graph(graph)
 
 
 def draw_outside(index, search_files=None, draw_dir=None):
@@ -103,16 +105,4 @@ def draw_outside(index, search_files=None, draw_dir=None):
                 gv.edge(graph, os.path.relpath(file_name, config.ROOT_DIR), os.path.relpath(imp, config.ROOT_DIR))
 
 
-    render_graph(graph, 'outside.svg')
-
-
-def complete_search(data, index, search_files=[], draw_dir=None):
-    draw_inside(data,
-                draw_dir=draw_dir,
-                search_files=search_files
-    )
-
-    draw_outside(index,
-                 draw_dir=draw_dir,
-                 search_files=search_files,
-    )
+    return render_graph(graph)
