@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import simplejson
+from functools import partial
+from itertools import chain, imap, groupby
+
 import config
 import cache
 
@@ -41,11 +45,36 @@ class SvgHandler(tornado.web.RequestHandler):
         self.set_header('Content-Type', 'image/svg+xml')
         self.finish(x)
 
+
+def sort_func(text, item):
+    variants = item.split('.')
+    variants.append(item)
+    return max(imap(lambda x: x.find(text), variants))
+
+
+class SuggestHandler(tornado.web.RequestHandler):
+    def get(self):
+        name = self.get_argument('name')
+
+        files = data_cache.file_names
+
+        sort_func_partial = partial(sort_func, name)
+        suggests = list(chain.from_iterable([list(g) for k,g in groupby(sorted(files, key=sort_func_partial), sort_func_partial)][1:]))
+
+        self.set_header('Content-Type', 'application/json')
+
+        self.finish(simplejson.dumps(suggests[:15]))
+
+
+
+
+
 if __name__ == "__main__":
 
     application = tornado.web.Application([
         (r"/", MainHandler),
         (r"/svg", SvgHandler),
+        (r"/file_suggest", SuggestHandler),
     ])
 
     application.listen(8888)
