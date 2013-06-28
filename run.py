@@ -69,6 +69,9 @@ class SuggestHandler(tornado.web.RequestHandler):
         self.finish(simplejson.dumps(suggests[:15]))
 
 
+class InvalidateHandler(tornado.web.RequestHandler):
+    def get(self):
+        data_cache.invalidate(*get_data_and_index())
 
 
 
@@ -78,6 +81,7 @@ if __name__ == "__main__":
         (r"/", MainHandler),
         (r"/svg", SvgHandler),
         (r"/file_suggest", SuggestHandler),
+        (r"/cache_invalidate", InvalidateHandler),
     ])
 
     application.listen(8888)

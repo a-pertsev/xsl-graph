@@ -146,32 +146,52 @@ $(document).ready(function() {
     loadSvg();
 
     var $input = $('#filename');
+    var $getSvgButton = $('#getSvg');
+    var $invalidateButton = $('#invalidate');
 
-    function onSuccess(res) {
+    function getSvgFromInput() {
+        var name = $input.val();
+        if (!name) { return; }
+        loadSvg(name);
+    }
+
+    function onSuccessSvgLoad(res) {
         $input.autocomplete({source: res});
     }
 
     function getSuggest() {
         var value = $input.val();
-        if (!value || value.length < 2) return;
+        if (!value || value.length < 2) {
+            $getSvgButton.attr('disabled', true);
+            return;
+        } else {
+            $getSvgButton.attr('disabled', false);
+        }
 
         $.ajax({
             url: '/file_suggest',
             data: {'name': $input.val()},
             dataType: 'json',
-            success: onSuccess
+            success: onSuccessSvgLoad
         });
     }
 
     $input.bind('keyup', getSuggest);
 
-    var $getSvgButton = $('#getSvg');
+    $getSvgButton.on('click', getSvgFromInput.bind(this));
 
-    $getSvgButton.on('click', function() {
-        var name = $input.val();
-        if (!name) { return; }
-        loadSvg(name);
-    }.bind(this));
+    $invalidateButton.on('click', function() {
+        $invalidateButton.attr('disabled', true);
+
+        $.ajax({
+            url: '/cache_invalidate',
+            success: getSvgFromInput.bind(this),
+            complete: function() {
+                $invalidateButton.attr('disabled', false);
+            }
+        });
+    });
+
 });
 
 
