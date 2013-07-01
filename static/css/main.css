@@ -1,0 +1,42 @@
+body {
+    height:100%;
+    margin: 0;
+}
+
+#header-container {
+    width:100%;
+    height: 50px;
+    position: fixed;
+}
+
+#header {
+    position: fixed;
+    width: 100%;
+    height: 50px;
+    padding: 15px 0 0 20px;
+    color: white;
+    background-color: #2f4f4f;
+}
+
+#filename {
+    height: 25px;
+    width: 400px;
+    padding: 0 5px;
+    margin: 0 20px;
+    font-size: 18px;
+}
+
+#container {
+    padding-top: 70px;
+}
+
+.actionButton {
+    width: 80px;
+    height: 30px;
+}
+
+.zoomButton {
+    width: 30px;
+    height: 30px;
+}
+

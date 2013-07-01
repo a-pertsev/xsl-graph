@@ -7,15 +7,18 @@
     <script type="text/javascript" src="http://127.0.0.1:91/static/js/main.js"></script>
 
     <link rel="stylesheet" href="http://127.0.0.1:91/static/css/jquery.ui.min.css" type="text/css"/>
+    <link rel="stylesheet" href="http://127.0.0.1:91/static/css/main.css" type="text/css"/>
 </head>
 
-<body style="height:100%; margin: 0;">
-    <div style="position: fixed;">
-        <input id="zoomIn" style="width: 30px; height: 30px;" type="button" value="+"/>
-        <input id="zoomOut" style="width: 30px; height: 30px;" type="button" value="-"/>
-        <input id="filename" style="height: 25px; width: 400px; padding: 0 5px; font-size: 18px;" type="text"/>
-        <input id="getSvg" style="width: 80px; height: 30px;" type="button" disabled="disabled" value="Get SVG"/>
-        <input id="invalidate" style="width: 80px; height: 30px;" type="button" value="Invalidate"/>
+<body>
+    <div id="header-container">
+        <div id="header">
+            <input id="zoomIn" class="zoomButton" type="button" value="+"/>
+            <input id="zoomOut" class="zoomButton" type="button" value="-"/>
+            <input id="filename" type="text"/>
+            <input id="getSvg" class="actionButton" type="button" disabled="disabled" value="Get SVG"/>
+            <input id="invalidate" class="actionButton" type="button" value="Invalidate"/>
+        </div>
     </div>
 
     <div id="container"></div>
