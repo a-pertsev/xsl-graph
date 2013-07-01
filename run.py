@@ -10,7 +10,7 @@ import config
 import cache
 
 from pyxsl.parse import get_data_and_index
-from pyxsl.draw import draw_outside, draw_inside
+from pyxsl.draw import draw_outside, draw_inside, render_graph, create_graph
 from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
 
 
@@ -33,20 +33,26 @@ class MainHandler(tornado.web.RequestHandler):
 
 class SvgHandler(tornado.web.RequestHandler):
     def get(self):
-        file = self.get_argument('file', 'hh/blocks/page.xsl')
+        file = str(os.path.join(config.ROOT_DIR, self.get_argument('file', 'hh/blocks/page.xsl')))
 
-        x = draw_inside(
+        graph = create_graph()
+
+        graph = draw_inside(
+            graph=graph,
             data=data_cache.data,
-            search_files=[str(os.path.join(config.ROOT_DIR, file))]
+            search_files=[file],
         )
 
-    #    y = draw_outside(index,
-    #                 draw_dir=config.ROOT_DIR + '/hh/catalog',
-    #                 search_files=[config.ROOT_DIR + '/hh/blocks/searchresult/search-vacancy-result-oldstyle.xsl'],
-    #    )
+        graph = draw_outside(
+            graph=graph,
+            index=data_cache.index,
+            search_files=[file],
+        )
+
+        result = render_graph(graph)
 
         self.set_header('Content-Type', 'image/svg+xml')
-        self.finish(x)
+        self.finish(result)
 
 
 def sort_func(text, item):
