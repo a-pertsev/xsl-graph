@@ -198,15 +198,6 @@ $(document).ready(function() {
     });
 
 
-
-    function headerShow() {
-        if (innerHidden) {
-            $inner.animate({'top': '45px'}, {duration: 500, complete: function(){
-                $inner.css('position', 'static');
-            }});
-        }
-    };
-
     $headerContainer.on('mouseover mouseleave', function(e) {
         var actionShow = (e.type === 'mouseover');
 
@@ -220,10 +211,6 @@ $(document).ready(function() {
             }.bind(this)});
         }
     }.bind(this));
-
-
-    //$headerContainer.on('mouseover', headerShow.bind(this));
-    //$headerContainer.on('mouseleave', headerHide.bind(this));
 
 
 });
