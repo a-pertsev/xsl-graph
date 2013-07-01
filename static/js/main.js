@@ -148,6 +148,10 @@ $(document).ready(function() {
     var $input = $('#filename');
     var $getSvgButton = $('#getSvg');
     var $invalidateButton = $('#invalidate');
+    var $headerContainer = $('#header-container');
+    var $header = $('#header');
+    var headerShown = false;
+
 
     function getSvgFromInput() {
         var name = $input.val();
@@ -156,7 +160,8 @@ $(document).ready(function() {
     }
 
     function onSuccessSvgLoad(res) {
-        $input.autocomplete({source: res});
+        $input.autocomplete({source: res,
+                             appendTo: $header});
     }
 
     function getSuggest() {
@@ -191,6 +196,35 @@ $(document).ready(function() {
             }
         });
     });
+
+
+
+    function headerShow() {
+        if (innerHidden) {
+            $inner.animate({'top': '45px'}, {duration: 500, complete: function(){
+                $inner.css('position', 'static');
+            }});
+        }
+    };
+
+    $headerContainer.on('mouseover mouseleave', function(e) {
+        var actionShow = (e.type === 'mouseover');
+
+        if (!actionShow && e.clientY < 0) { return; }
+
+        if (actionShow !== headerShown) {
+            var top = actionShow ? '0px' : '-100px';
+            var duration = actionShow ? 0 : 500;
+            $header.animate({'top': top}, {duration: duration, complete: function() {
+                headerShown = !headerShown;
+            }.bind(this)});
+        }
+    }.bind(this));
+
+
+    //$headerContainer.on('mouseover', headerShow.bind(this));
+    //$headerContainer.on('mouseleave', headerHide.bind(this));
+
 
 });
 
