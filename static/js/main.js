@@ -135,8 +135,10 @@ function loadSvg(name) {
 
             $('#container').append(response.documentElement);
             initSvg();
-        }.bind(this)
-    });
+            if (name) {
+                highlight(window.nodes[name]);
+            }
+        }.bind(this)});
 
 }
 
