@@ -23,7 +23,7 @@ function initSvg() {
 
         var event = e.originalEvent;
 
-        scrollBy(event.clientX - windowCenterX, event.clientY - windowCenterY);
+        window.scrollBy(event.clientX - windowCenterX, event.clientY - windowCenterY);
 
         if (event.wheelDelta > 0) {
             zoomIn(1.1);
@@ -45,6 +45,8 @@ function highlightEdge(edge) {
 
 function highlight(elem, c) {
     'use strict';
+
+    if (!elem) { return; }
 
     var color = c || '#00ffff';
     window.highlighted.push(elem);
@@ -171,9 +173,9 @@ $(document).ready(function() {
         if (!value || value.length < 2) {
             $getSvgButton.attr('disabled', true);
             return;
-        } else {
-            $getSvgButton.attr('disabled', false);
         }
+
+        $getSvgButton.attr('disabled', false);
 
         $.ajax({
             url: '/file_suggest',
@@ -184,6 +186,7 @@ $(document).ready(function() {
     }
 
     $input.bind('keyup', getSuggest);
+    $input.autocomplete();
 
     $getSvgButton.on('click', getSvgFromInput.bind(this));
 
@@ -203,17 +206,20 @@ $(document).ready(function() {
     $headerContainer.on('mouseover mouseleave', function(e) {
         var actionShow = (e.type === 'mouseover');
 
+        if (!actionShow) {
+            $input.autocomplete('close');
+        }
+
         if (!actionShow && e.clientY < 0) { return; }
 
         if (actionShow !== headerShown) {
             var top = actionShow ? '0px' : '-100px';
             var duration = actionShow ? 0 : 500;
-            $header.animate({'top': top}, {duration: duration, complete: function() {
-                headerShown = !headerShown;
-            }.bind(this)});
+            headerShown = !headerShown;
+
+            $header.animate({'top': top}, {duration: duration});
         }
     }.bind(this));
-
 
 });
 
