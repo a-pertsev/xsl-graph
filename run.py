@@ -21,7 +21,6 @@ import tornado.web
 data_cache = cache.DataCacher()
 
 data_cache.invalidate(*get_data_index_from_pickle())
-#data_cache.invalidate(*get_data_and_index())
 
 
 
@@ -78,7 +77,7 @@ class SuggestHandler(tornado.web.RequestHandler):
 class InvalidateHandler(tornado.web.RequestHandler):
     def get(self):
         data_cache.invalidate(*get_data_and_index())
-
+        pickle_data_and_index(data_cache.data, data_cache.index)
 
 
 if __name__ == "__main__":
