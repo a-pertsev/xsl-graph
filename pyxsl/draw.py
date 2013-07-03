@@ -5,11 +5,13 @@ import os
 import logging
 
 import config
-from parse import get_xsls_in_dir
+from pyxsl.parse import get_xsls_in_dir
+
+logger = logging.getLogger(name='drawingLogger')
 
 
 def create_graph():
-    logging.debug('Creating graph...')
+    logger.debug('Creating graph...')
 
     graph = gv.graph('xsls')
     gv.setv(graph, 'charset', 'utf-8')
@@ -23,13 +25,11 @@ def create_graph():
 
 
 def render_graph(graph):
-    logging.debug('Drawing graph...')
+    logger.debug('Drawing graph...')
     gv.layout(graph, 'dot')
     data = gv.renderdata(graph, 'svg')
-    logging.debug('End')
+    logger.debug('End')
     return data
-    #gv.render(graph, 'svg', os.path.join(config.RESULTS_DIR, name))
-
 
 
 

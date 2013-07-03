@@ -8,6 +8,9 @@ from collections import defaultdict
 
 import config
 
+
+logger = logging.getLogger(name='parsingLogger')
+
 XSL_NS = "{http://www.w3.org/1999/XSL/Transform}"
 
 
@@ -17,7 +20,7 @@ def get_xsls_in_dir(dirname):
 def parse_file(xsl_file_name, get_imports, get_templates, get_modes, from_file, get_keys):
     result = {}
     if not os.path.exists(xsl_file_name):
-        logging.error('No such a file: {0} -> {1}'.format(from_file, xsl_file_name))
+        logger.error(['No such a file', from_file, xsl_file_name])
         return None
     tree = etree.parse(xsl_file_name)
     if get_imports:
@@ -53,7 +56,7 @@ def parse_files(start_dir, file_list, get_imports=True, get_templates=False, get
 
 
 def get_data(start_files=[], start_dir=config.ROOT_DIR):
-    logging.debug('Parsing dirs...')
+    logger.debug('Parsing dirs...')
     files = start_files[:]
 
     root_dir = start_dir or config.ROOT_DIR
@@ -61,7 +64,7 @@ def get_data(start_files=[], start_dir=config.ROOT_DIR):
     if start_dir is not None:
         files = files + get_xsls_in_dir(start_dir)
 
-    logging.debug('Dirs data collecting...')
+    logger.debug('Dirs data collecting...')
     data = dict(parse_files(root_dir, files))
 
     return data
