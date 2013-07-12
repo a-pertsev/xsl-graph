@@ -3,9 +3,11 @@ body {
     margin: 0;
 }
 
+
+
 #header-container {
     width:100%;
-    height: 120px;
+    height: 60px;
     position: fixed;
 }
 
@@ -40,3 +42,6 @@ body {
     height: 30px;
 }
 
+.node {
+    cursor: pointer;
+}

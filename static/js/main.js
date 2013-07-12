@@ -18,18 +18,34 @@ function initSvg() {
 
     $svg.on('mousewheel', function(e) {
         var $window = $(window);
-        var windowCenterX = $window.width() / 2,
-            windowCenterY = $window.height() / 2;
+        var node = $('g')[10];
+        console.log(e);
 
         var event = e.originalEvent;
+        e.preventDefault();
 
-        window.scrollBy(event.clientX - windowCenterX, event.clientY - windowCenterY);
+        var zoomK = 1.1;
 
-        if (event.wheelDelta > 0) {
-            zoomIn(1.1);
-        } else {
-            zoomOut(1.1);
-        }
+        var direction = event.wheelDelta > 0 ? -1 : 1;
+
+        var xc = 0;
+        var yc = 80;
+
+        var dx = (event.layerX - xc) * (1 - zoomK) * direction;
+        var dy = (event.layerY - yc) * (1 - zoomK) * direction;
+
+        var tofocus = window.nodes['global/banner.xsl'];
+
+//        console.log('layerX : ' + event.layerX);
+//        console.log('elem offset : (' + tofocus.ellipse.offset().left + ', ' + tofocus.ellipse.offset().top + ')');
+//        console.log('dx : ' + dx);
+
+        window.scrollBy(dx, dy);
+
+        (event.wheelDelta > 0 ? zoomIn : zoomOut)(zoomK);
+
+//        console.log('new layerX : ' + (parseInt(event.layerX, 10) + dx));
+//        console.log('new elem offset : (' + tofocus.ellipse.offset().left + ', ' + tofocus.ellipse.offset().top + ')');
     });
 
     zoomOut($svg.width() / $(window).width());
@@ -49,6 +65,7 @@ function highlight(elem, c) {
     if (!elem) { return; }
 
     var color = c || '#00ffff';
+
     window.highlighted.push(elem);
     elem.ellipse.css('fill', color);
     elem.children.forEach(function(el) {
@@ -112,6 +129,7 @@ function loadSvg(name) {
                     elem.inEdges = [];
                     elem.outEdges = [];
                     elem.ellipse = $('ellipse', el);
+                    elem.ellipse.css('fill', 'white');
                     elem.children = [];
 
                     elem.$element.on('click', highlightClick.bind(this, elem));

@@ -17,6 +17,7 @@ import tornado.web
 import config
 import cache
 
+import pyxsl.analyze as analyze
 from pyxsl.parse import get_data_and_index, get_data
 from pyxsl.draw import draw_outside, draw_inside, render_graph, create_graph
 from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
@@ -87,6 +88,14 @@ class InvalidateHandler(tornado.web.RequestHandler):
         pickle_data_and_index(data_cache.data, data_cache.index)
 
 
+
+def get_errors_from_log(handler):
+    records = filter(lambda record: record.levelname == 'ERROR', handler.buffer)
+    grouped = groupby(sorted(map(lambda record: record.msg, records), key=itemgetter(0)), key=itemgetter(0))
+
+    return dict((key, map(AnalyzeHandler.clean_records, group)) for key, group in grouped)
+
+
 class AnalyzeHandler(tornado.web.RequestHandler):
 
     @staticmethod
@@ -99,13 +108,14 @@ class AnalyzeHandler(tornado.web.RequestHandler):
         handler = logging.handlers.MemoryHandler('hndlr')
         logger.addHandler(handler)
 
-        get_data()
+        data = get_data()
 
-        records = filter(lambda record: record.levelname == 'ERROR', handler.buffer)
+        result = {
+            'Not used XSLS': analyze.get_not_used_xsls(data_cache.data, data_cache.index),
+            'Duplicated imports':  analyze.get_duplicated_imports(data)
+        }
 
-        grouped = groupby(sorted(map(lambda record: record.msg, records), key=itemgetter(0)), key=itemgetter(0))
-
-        result = dict((key, map(AnalyzeHandler.clean_records, group)) for key, group in grouped)
+        result.update(get_errors_from_log(handler))
 
         self.finish(simplejson.dumps(result))
 
