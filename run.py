@@ -1,30 +1,36 @@
 # -*- coding: utf-8 -*-
 
-import pyxsl.analyze
-from pyxsl.parse import get_data_and_index
-from pyxsl.draw import draw_outside, draw_inside
-from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
+from collections import defaultdict
 
-
-start_dir = '/home/apertsev/workspace/hh.sites.main/xhh/xsl'
-
-files_to_search = [
-                    '/home/apertsev/workspace/hh.sites.main/xhh/xsl/ambient/blocks/applicant/login.xsl',
-                  ]
+from pyproc.stylesheet import Stylesheet
+from pyproc.analyze import compare_import_priorities
 
 if __name__ == "__main__":
-    '''
-       Usage examples:
-         data, index = get_data_and_index(start_dir=start_dir)
-         pickle_data_and_index(data, index)
-         data, index = get_data_index_from_pickle()
+    xsl = '/home/apertsev/workspace/frontik/xhh/xsl/sochi/employer.xsl'
+#    xsl = '/home/apertsev/workspace/xsl-graph/tests/xsl/template_modes_test/1.xsl'
+    stylesheet = Stylesheet(xsl)
+    templates = stylesheet.all_templates
 
-         draw_outside(index, files_to_search, start_dir=start_dir)
-         draw_inside(data, start_dir=start_dir)
-    '''
+    called_templates = defaultdict(list)
+    name_templates = defaultdict(list)
 
-    #data, index = get_data_and_index(start_dir=start_dir)
-    #pickle_data_and_index(data, index)
-    data, index = get_data_index_from_pickle()
-    modes = pyxsl.analyze.analyze_modes_usage(data)
+    for template in templates:
+        for item in template.external_links:
+            template_name = getattr(item, 'name', None)
+            if template_name is not None:
+                called_templates[template_name].append(item)
 
+        if template.name is not None:
+            name_templates[template.name].append(template)
+
+
+    links = []
+
+    for name, templates in called_templates.iteritems():
+        if len(name_templates[name]) > 1:
+            sorted_templates = sorted(name_templates[name],
+                                      reverse=True,
+                                      cmp=lambda x,y: compare_import_priorities(x.i_priority, y.i_priority))
+            links.append((sorted_templates[0], templates))
+
+    print links
