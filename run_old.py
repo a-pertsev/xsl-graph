@@ -1,36 +1,36 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from lxml import etree, objectify
+from collections import defaultdict
 
-
-import config
-
-from pyxsl.parse import get_data_and_index, get_all_inner_xsl, get_all_ancestors
-from pyxsl.analyze import search_cross_platform_imports, get_not_used_xsls, analyze_modes_usage, analyze_funcs_usage
-from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
-
+from pyproc.stylesheet import Stylesheet
+from pyproc.analyze import compare_import_priorities
 
 if __name__ == "__main__":
-#    result = etree.fromstring(""" <xsl:stylesheet
-#                                        version="1.0"
-#                                        xmlns:hh="http://schema.reintegration.hh.ru/types"
-#                                        exclude-result-prefixes="hh func"
-#                                        xmlns:func="http://exslt.org/functions"
-#                                        xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-#                                        xmlns="http://www.w3.org/1999/xhtml"></xsl:stylesheet>  """)
-#
-#    result.extend(get_all_inner_xsl('/home/apertsev/workspace/hh.sites.main/xhh/xsl/ambient/similar-vacancy-result.xsl'))
-#    print etree.tostring(result, pretty_print=True)
-#    x
+    xsl = '/home/apertsev/workspace/frontik/xhh/xsl/sochi/employer.xsl'
+#    xsl = '/home/apertsev/workspace/xsl-graph/tests/xsl/template_modes_test/1.xsl'
+    stylesheet = Stylesheet(xsl)
+    templates = stylesheet.all_templates
 
-    if 1:
-        data, index = get_data_and_index(start_dir=config.ROOT_DIR)
-        pickle_data_and_index(data, index)
-    else:
-        data, index = get_data_index_from_pickle()
+    called_templates = defaultdict(list)
+    name_templates = defaultdict(list)
 
-    search_cross_platform_imports(index, config.ROOT_DIR + '/hh')
-    print analyze_modes_usage(data)
+    for template in templates:
+        for item in template.external_links:
+            template_name = getattr(item, 'name', None)
+            if template_name is not None:
+                called_templates[template_name].append(item)
 
-    print get_not_used_xsls(data, index)
+        if template.name is not None:
+            name_templates[template.name].append(template)
+
+
+    links = []
+
+    for name, templates in called_templates.iteritems():
+        if len(name_templates[name]) > 1:
+            sorted_templates = sorted(name_templates[name],
+                                      reverse=True,
+                                      cmp=lambda x,y: compare_import_priorities(x.i_priority, y.i_priority))
+            links.append((sorted_templates[0], templates))
+
+    print links

@@ -4,6 +4,8 @@
 
 *.pckl
 
+tornado
+tmp_xsl
 .idea/
 *.iml
 /tornado
