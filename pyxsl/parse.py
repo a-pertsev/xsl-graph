@@ -37,9 +37,13 @@ def get_tree(xsl_name):
 def parse_file(xsl_file_name, from_file):
     tree = get_tree(xsl_file_name)
 
+    if tree is None:
+        return None
+
     current_dir = os.path.dirname(xsl_file_name)
 
     result = defaultdict(list)
+
 
     for el in tree.getiterator():
         if is_xsl_tag(el, 'import'):
