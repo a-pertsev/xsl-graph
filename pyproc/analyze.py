@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+
 from lxml import etree
+from itertools import imap
+from collections import defaultdict
+
 from pyproc.common import XSL_NS
+from pyproc.tree import ResultTree
 from pyproc.stylesheet import Stylesheet
+from pyproc.templates import CallTemplate
 
 
 def get_not_used_templates(stylesheet):
@@ -9,10 +15,70 @@ def get_not_used_templates(stylesheet):
     return templates
 
 
+def build_external_links_tree(node, modes, templates, processed):
+    if node in processed:
+        return
+
+    processed.append(node)
+
+    tree = {node: []}
+
+    for link in node.external_links:
+        if isinstance(link, CallTemplate):
+            continue
+
+        mode_eqal_nodes = modes.get(link.mode)
+        if not mode_eqal_nodes:
+            print 'O_O', node, link
+            continue
+
+        for linked_node in mode_eqal_nodes:
+            if linked_node.match in link.select:
+                links_tree = build_external_links_tree(linked_node, modes, templates, processed)
+                if links_tree is not None:
+                    tree[node].append(links_tree)
+
+    return tree
+
+
+def cut_not_used_templates(all_templates):
+    modes = defaultdict(list)
+
+    for template in all_templates:
+        if template.match is not None:
+            modes[template.mode].append(template)
+
+    for mode, templates in modes.iteritems():
+        result = []
+        for template in templates:
+            result.append(template)
+
+
+def get_applies_tree(xsl):
+    stylesheet = Stylesheet(xsl)
+
+    modes = defaultdict(list)
+    root = None
+
+    #cut_not_used_templates(stylesheet.all_templates)
+
+    for template in stylesheet.all_templates:
+        if template.match is not None:
+            modes[template.mode].append(template)
+            if template.mode is None and template.match.string == 'doc':
+                root = template
+
+    assert root != None, 'No "doc" root element in xsl'
+
+    tree = ResultTree(root, modes, stylesheet.all_templates)
+
+    return tree
+
+
 def get_full_xml(xsl):
     stylesheet = Stylesheet(xsl)
 
-    result = etree.fromstring(""" <xsl:stylesheet
+    result = etree.fromstring("""<xsl:stylesheet
                                      version="1.0"
                                      xmlns:hh="http://schema.reintegration.hh.ru/types"
                                      exclude-result-prefixes="hh func"
@@ -24,6 +90,7 @@ def get_full_xml(xsl):
         new_template = etree.Element('{0}template'.format(XSL_NS))
         for attr, value in template.element.attrib.items():
             new_template.set(attr, value)
+            new_template.set('import-priority', '.'.join(imap(str,template.i_priority)))
 
         have_xsl_applying = False
         empty = not template.element.text and not any(template.element.iter())
@@ -48,18 +115,7 @@ def get_full_xml(xsl):
 
         result.append(new_template)
 
+    return result
 
-    return etree.tostring(result, pretty_print=True)
 
 
-def compare_import_priorities(priority1, priority2):
-    l1 = len(priority1)
-    l2 = len(priority2)
-
-    if l1 != l2:
-        return 1 if l1 < l2 else -1
-
-    for index in xrange(l1):
-        if priority1[index] != priority2[index]:
-            return 1 if priority1[index] < priority2[index] else -1
-    return 0

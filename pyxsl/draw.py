@@ -40,7 +40,7 @@ def draw_related_inside(graph, data, files, drawn_nodes, drawn_edges):
             continue
 
         if xsl_file not in drawn_nodes:
-            gv.node(graph, '{0}'.format(os.path.relpath(xsl_file, config.ROOT_DIR)))
+            gv.node(graph, '{0}'.format(os.path.relpath(xsl_file, config.ROOT_XSL_DIR)))
             drawn_nodes.append(xsl_file)
 
         imports = file_data.get('imports')
@@ -49,7 +49,7 @@ def draw_related_inside(graph, data, files, drawn_nodes, drawn_edges):
 
         for xsl_import in imports:
             if (xsl_file, xsl_import) not in drawn_edges:
-                gv.edge(graph, os.path.relpath(xsl_file, config.ROOT_DIR), os.path.relpath(xsl_import, config.ROOT_DIR))
+                gv.edge(graph, os.path.relpath(xsl_file, config.ROOT_XSL_DIR), os.path.relpath(xsl_import, config.ROOT_XSL_DIR))
                 drawn_edges.append((xsl_file, xsl_import))
 
         draw_related_inside(graph, data, imports, drawn_nodes, drawn_edges)
@@ -76,17 +76,17 @@ def draw_related_outside(graph, index, search_files, drawn_nodes, drawn_edges):
             continue
 
         if search_file not in drawn_nodes:
-            gv.node(graph, '{0}'.format(os.path.relpath(search_file, config.ROOT_DIR)))
+            gv.node(graph, '{0}'.format(os.path.relpath(search_file, config.ROOT_XSL_DIR)))
             drawn_nodes.append(search_file)
 
         imported_by = set(imported_by)
 
         for imp in imported_by:
             if imp not in drawn_nodes:
-                gv.node(graph, '{0}'.format(os.path.relpath(imp, config.ROOT_DIR)))
+                gv.node(graph, '{0}'.format(os.path.relpath(imp, config.ROOT_XSL_DIR)))
                 drawn_nodes.append(imp)
             if (imp, file) not in drawn_edges:
-                gv.edge(graph, os.path.relpath(imp, config.ROOT_DIR), os.path.relpath(search_file, config.ROOT_DIR))
+                gv.edge(graph, os.path.relpath(imp, config.ROOT_XSL_DIR), os.path.relpath(search_file, config.ROOT_XSL_DIR))
                 drawn_edges.append((imp,file))
 
         draw_related_outside(graph, index, imported_by, drawn_nodes, drawn_edges)
@@ -100,7 +100,7 @@ def draw_outside(graph, index, search_files=None, draw_dir=None):
         for file_name, imported_by in index.iteritems():
             gv.node(graph, '{0}'.format(file_name))
             for imp in set(imported_by):
-                gv.edge(graph, os.path.relpath(file_name, config.ROOT_DIR), os.path.relpath(imp, config.ROOT_DIR))
+                gv.edge(graph, os.path.relpath(file_name, config.ROOT_XSL_DIR), os.path.relpath(imp, config.ROOT_XSL_DIR))
 
     return graph
 

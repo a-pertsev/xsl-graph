@@ -38,7 +38,7 @@ class DataCacher(object):
         self.__data = data
         self.__index = index
 
-        self.__file_names = map(lambda file: file.replace(config.ROOT_DIR, '').lstrip('/'), self.__data.iterkeys())
+        self.__file_names = map(lambda file: file.replace(config.ROOT_XSL_DIR, '').lstrip('/'), self.__data.iterkeys())
 
 
 

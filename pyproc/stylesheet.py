@@ -34,7 +34,7 @@ class MetaStylesheet(type):
             return MetaStylesheet.stylesheets[xsl_file_name]
 
         if not os.path.exists(xsl_file_name):
-            logging.warn('Bad import: {} -> {}'.format(self.name, xsl_file_name))
+            raise Exception('No such stylesheet: {}'.format(xsl_file_name))
             return None
 
         new_stylesheet = type.__call__(self, xsl_file_name, *args, **kwargs)
@@ -73,7 +73,7 @@ class Stylesheet(object):
                 continue
 
             if tag_name == 'template':
-                self.__templates.append(Template(node))
+                self.__templates.append(Template(node, self))
             elif tag_name == 'import':
                 path = os.path.abspath(os.path.join(dir_name, node.get('href')))
                 self.__imports.append(Stylesheet(path))
@@ -106,6 +106,13 @@ class Stylesheet(object):
     @require(__init_stylesheet)
     def __get_imports(self):
         return self.__imports
+
+    @require(__init_stylesheet)
+    def __get_all_imports(self):
+        return {self.path: [imp.get_all_imports() for imp in self.__imports]}
+
+    def get_all_imports(self):
+        return self.__get_all_imports()
 
     imports = property(__get_imports)
     all_templates = property(__get_all_templates)

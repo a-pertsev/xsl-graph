@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os
+import simplejson
+
 
 XSL_NS = '{http://www.w3.org/1999/XSL/Transform}'
 XSL_NS_TEXT = 'http://www.w3.org/1999/XSL/Transform'
@@ -25,3 +28,13 @@ def require(require_f):
             return func(self, *args, **kwargs)
         return wrapped_func
     return inner_decorator
+
+
+
+class JSONEncoder(simplejson.JSONEncoder):
+    def default(self, o):
+        if hasattr(o, '__to_json'):
+            return o.__to_json()
+
+        return simplejson.JSONEncoder.default(self, o)
+

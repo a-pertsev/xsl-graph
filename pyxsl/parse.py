@@ -25,12 +25,11 @@ def is_xsl_tag(element, tag_name):
 
 def get_tree(xsl_name):
     if not os.path.exists(xsl_name):
-        logger.error(['No such a file', xsl_name])
         return None
     try:
         return etree.parse(xsl_name)
     except:
-        print xsl_name
+        logger.error('Cannot parse XSL: {0}'.format(xsl_name))
         raise
 
 
@@ -38,6 +37,7 @@ def parse_file(xsl_file_name, from_file):
     tree = get_tree(xsl_file_name)
 
     if tree is None:
+        logger.error(['No such a file', from_file, xsl_file_name])
         return None
 
     current_dir = os.path.dirname(xsl_file_name)
@@ -104,11 +104,11 @@ def parse_files(start_dir, file_list, from_file=None):
         yield (file_name, parse_results)
 
 
-def get_data(start_files=[], start_dir=config.ROOT_DIR):
+def get_data(start_files=[], start_dir=config.ROOT_XSL_DIR):
     logger.debug('Parsing dirs...')
     files = start_files[:]
 
-    root_dir = start_dir or config.ROOT_DIR
+    root_dir = start_dir or config.ROOT_XSL_DIR
 
     if start_dir is not None:
         files = files + get_xsls_in_dir(start_dir)
@@ -119,7 +119,7 @@ def get_data(start_files=[], start_dir=config.ROOT_DIR):
     return data
 
 
-def get_data_and_index(start_files=[], start_dir=config.ROOT_DIR):
+def get_data_and_index(start_files=[], start_dir=config.ROOT_XSL_DIR):
 
     data = get_data(start_files, start_dir)
 

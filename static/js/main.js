@@ -13,14 +13,10 @@ function initSvg() {
         $svg.height($svg.height() / factor);
     };
 
-    $('#zoomOut').on('click', zoomOut.bind(this, 1.5));
-    $('#zoomIn').on('click', zoomIn.bind(this, 1.5));
+    $('#zoomOut').on('click', zoomOut.bind(window, 1.5));
+    $('#zoomIn').on('click', zoomIn.bind(window, 1.5));
 
     $svg.on('mousewheel', function(e) {
-        var $window = $(window);
-        var node = $('g')[10];
-        console.log(e);
-
         var event = e.originalEvent;
         e.preventDefault();
 
@@ -28,24 +24,29 @@ function initSvg() {
 
         var direction = event.wheelDelta > 0 ? -1 : 1;
 
-        var xc = 0;
-        var yc = 80;
+        var leftMargin = parseInt($svg.css('margin-left'), 10);
+        var topMargin = parseInt($svg.css('margin-top'), 10);
 
-        var dx = (event.layerX - xc) * (1 - zoomK) * direction;
-        var dy = (event.layerY - yc) * (1 - zoomK) * direction;
+        var offset = $svg.offset();
 
-        var tofocus = window.nodes['global/banner.xsl'];
+        var dx = (event.layerX - offset.left) * (1 - zoomK) * direction;
+        var dy = (event.layerY - offset.top) * (1 - zoomK) * direction;
 
-//        console.log('layerX : ' + event.layerX);
-//        console.log('elem offset : (' + tofocus.ellipse.offset().left + ', ' + tofocus.ellipse.offset().top + ')');
-//        console.log('dx : ' + dx);
-
-        window.scrollBy(dx, dy);
+        console.log('dx=' + dx + ', dy=' + dy);
 
         (event.wheelDelta > 0 ? zoomIn : zoomOut)(zoomK);
 
-//        console.log('new layerX : ' + (parseInt(event.layerX, 10) + dx));
-//        console.log('new elem offset : (' + tofocus.ellipse.offset().left + ', ' + tofocus.ellipse.offset().top + ')');
+        if (document.body.scrollHeight === document.body.clientHeight) {
+            $svg.css('margin-top', topMargin + dy + 'px');
+        } else {
+            window.scrollBy(window.scrollX, dy);
+        }
+
+        if (document.body.scrollWidth === document.body.clientWidth) {
+            $svg.css('margin-left', leftMargin - dx + 'px');
+        } else {
+            window.scrollBy(dx, window.scrollY);
+        }
     });
 
     zoomOut($svg.width() / $(window).width());
@@ -55,24 +56,30 @@ function highlightEdge(edge) {
     'use strict';
 
     window.highlightedEdges.push(edge);
-    edge.path.attr('stroke-width', '7px');
-    edge.path.attr('stroke', 'red');
+    edge.path.setAttribute('stroke-width', '7px');
+    edge.path.setAttribute('stroke', 'red');
+}
+
+function highlighElement(elem, color) {
+
 }
 
 function highlight(elem, c) {
     'use strict';
 
-    if (!elem) { return; }
+    if (!elem) return;
 
     var color = c || '#00ffff';
 
     window.highlighted.push(elem);
-    elem.ellipse.css('fill', color);
+
+    elem.ellipse.style.fill = color;
+
     elem.children.forEach(function(el) {
         highlight(el);
     });
 
-    elem.outEdges.forEach(highlightEdge.bind(this));
+    elem.outEdges.forEach(highlightEdge);
 }
 
 
@@ -80,15 +87,15 @@ function unHighlightAll() {
     'use strict';
 
     window.highlighted.forEach(function(el) {
-        el.ellipse.css('fill', 'white');
-    }.bind(this));
+        el.ellipse.style.fill = 'white';
+    });
 
     window.highlighted = [];
 
     window.highlightedEdges.forEach(function(edge) {
-        edge.path.attr('stroke-width', '');
-        edge.path.attr('stroke', 'black');
-    }.bind(this));
+        edge.path.setAttribute('stroke-width', '');
+        edge.path.setAttribute('stroke', 'black');
+    });
 
     window.highlightedEdges = [];
 }
@@ -102,7 +109,7 @@ function highlightClick(elem, e) {
 }
 
 
-function loadSvg(name) {
+function loadSvg(name, loadTemplates) {
     'use strict';
 
     window.nodes = {};
@@ -113,7 +120,7 @@ function loadSvg(name) {
     var $container = $('#container');
     $container.empty();
 
-    $.ajax({url: '/svg',
+    $.ajax({url: loadTemplates ? '/svg_templates' : '/svg',
         data: {file: name},
         success: function(response) {
             $('g', response.documentElement).each(function(index, el) {
@@ -128,8 +135,8 @@ function loadSvg(name) {
                     elem.$element = $(el);
                     elem.inEdges = [];
                     elem.outEdges = [];
-                    elem.ellipse = $('ellipse', el);
-                    elem.ellipse.css('fill', 'white');
+                    elem.ellipse = $('ellipse', el)[0];
+                    elem.ellipse.style.fill = 'white';
                     elem.children = [];
 
                     elem.$element.on('click', highlightClick.bind(this, elem));
@@ -142,7 +149,7 @@ function loadSvg(name) {
 
                     var edge = window.edges[text] = window.edges[text] || {};
                     edge.type = 'edge';
-                    edge.path = $('path', el);
+                    edge.path = $('path', el)[0];
                     edge.element = el;
 
                     nodeFrom.children.push(nodeTo);
@@ -158,36 +165,38 @@ function loadSvg(name) {
             if (name) {
                 highlight(window.nodes[name]);
             }
-        }.bind(this)});
+        }});
 
 }
 
 $(document).ready(function() {
     'use strict';
 
-    loadSvg();
-
-    var $input = $('#filename');
+    var $input = $('#filename')
+    var input = $input[0];
     var $getSvgButton = $('#getSvg');
     var $invalidateButton = $('#invalidate');
     var $headerContainer = $('#header-container');
     var $header = $('#header');
+    var $checkbox = $('#templatesCheckbox');
     var headerShown = false;
 
+    loadSvg();
 
     function getSvgFromInput() {
-        var name = $input.val();
+        var name = input.value;
         if (!name) { return; }
-        loadSvg(name);
+
+        loadSvg(name, $checkbox.prop('checked'));
     }
 
     function onSuccessSvgLoad(res) {
-        $input.autocomplete({source: res,
+        $(input).autocomplete({source: res,
                              appendTo: $header});
     }
 
     function getSuggest() {
-        var value = $input.val();
+        var value = input.value;
         if (!value || value.length < 2) {
             $getSvgButton.attr('disabled', true);
             return;
@@ -197,7 +206,7 @@ $(document).ready(function() {
 
         $.ajax({
             url: '/file_suggest',
-            data: {'name': $input.val()},
+            data: {'name': input.value},
             dataType: 'json',
             success: onSuccessSvgLoad
         });

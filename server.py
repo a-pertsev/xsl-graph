@@ -23,12 +23,13 @@ from pyxsl.draw import draw_outside, draw_inside, render_graph, create_graph
 from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
 
 
-
 data_cache = cache.DataCacher()
 
-data_cache.invalidate(*get_data_index_from_pickle())
-
-
+try:
+    data_cache.invalidate(*get_data_index_from_pickle())
+except IOError:
+    data, index = get_data_and_index()
+    pickle_data_and_index(data, index)
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -36,9 +37,9 @@ class MainHandler(tornado.web.RequestHandler):
         self.render('templates/main.html')
 
 
-class SvgHandler(tornado.web.RequestHandler):
+class SVGImportsHandler(tornado.web.RequestHandler):
     def get(self):
-        file = str(os.path.join(config.ROOT_DIR, self.get_argument('file', 'hh/blocks/page.xsl')))
+        file = str(os.path.join(config.ROOT_XSL_DIR, self.get_argument('file', 'ambient/blocks/page.xsl')))
 
         graph = create_graph()
 
@@ -100,7 +101,7 @@ class AnalyzeHandler(tornado.web.RequestHandler):
 
     @staticmethod
     def clean_records(records):
-        return map(lambda xsl_name: xsl_name.replace(config.ROOT_DIR, '').lstrip('/'), records[1:])
+        return map(lambda xsl_name: xsl_name.replace(config.ROOT_XSL_DIR, '').lstrip('/'), records[1:])
 
 
     def get(self):
@@ -125,14 +126,16 @@ if __name__ == "__main__":
 
     application = tornado.web.Application([
         (r"/", MainHandler),
-        (r"/svg", SvgHandler),
+        (r"/svg", SVGImportsHandler),
         (r"/file_suggest", SuggestHandler),
         (r"/cache_invalidate", InvalidateHandler),
         (r"/analyze", AnalyzeHandler),
+        (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": "static"}),
+
     ])
 
     application.listen(8888)
     io_loop = tornado.ioloop.IOLoop.instance()
 
-    #tornado.autoreload.start(io_loop, 1000)
+    tornado.autoreload.start(io_loop, 1000)
     io_loop.start()

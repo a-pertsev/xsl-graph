@@ -3,11 +3,13 @@
 import os.path
 import unittest
 
-from pyproc.match import clean_from_predicates, split_predicates, parse_match_string, BadLocation
-from pyproc.match import Match
+from pyproc.match import Match, Select, clean_from_predicates, split_predicates, select_nodes_in_match_nodes, \
+                         BadLocation, split_and_simplify_xpath, ANY_NUMBER_OF_NODES, ROOT_NODE
+
 from pyproc.stylesheet import Stylesheet
 
-from pyproc.analyze import get_not_used_templates, compare_import_priorities
+from pyproc.analyze import get_not_used_templates
+from pyproc.templates import compare_import_priorities
 
 
 XSL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'xsl'))
@@ -40,6 +42,7 @@ class TestStylesheetAnalyze(unittest.TestCase):
         self.assertEqual(compare_import_priorities([0], [1]), 1)
         self.assertEqual(compare_import_priorities([0], [1000]), 1)
         self.assertEqual(compare_import_priorities([0, 0, 0, 1], [0, 0, 0, 2]), 1)
+        self.assertEqual(compare_import_priorities([1, 2, 0, 0], [1, 2, 0]), -1)
 
 
 class TestMatches(unittest.TestCase):
@@ -85,8 +88,63 @@ class TestMatches(unittest.TestCase):
         self.assertEqual(clean_from_predicates('*[node1 | node2]'), '*')
         self.assertEqual(clean_from_predicates('*[node1|node2]|node3'), '*|node3')
 
-    def test_parsing_match_string(self):
-        self.assertEqual(parse_match_string('* | key()'), ['*', 'key()'])
-        self.assertEqual(parse_match_string('*|node'), ['*', 'node'])
-        self.assertEqual(parse_match_string('*[sim]|node1|node2'), ['*', 'node1', 'node2'])
-        self.assertEqual(parse_match_string('*[sim]|node1[a | b]|node2'), ['*', 'node1', 'node2'])
+
+    def test_clean_matches(self):
+        select = Select('.[@="1"] | node', context=Match('doc | notDoc'))
+        self.assertEqual(set(select.match_nodes), set(['doc', 'notDoc', 'doc/node', 'notDoc/node']))
+
+        select = Select('.[@="1"]', context=Match("doc[current()=.]/key | notDoc"))
+        self.assertEqual(select.match_nodes, ['doc/key', 'notDoc'])
+
+        select = Select('current()', context=Match("/doc"))
+        self.assertEqual(select.match_nodes, ['/doc'])
+
+        select = Select('node', context=Match("/doc"))
+        self.assertEqual(select.match_nodes, ['/doc/node'])
+
+
+    def test_split_xpath(self):
+        self.assertEqual(split_and_simplify_xpath('/'), [ROOT_NODE])
+        self.assertEqual(split_and_simplify_xpath('//'), [ANY_NUMBER_OF_NODES])
+        self.assertEqual(split_and_simplify_xpath('/doc/hoho'), [ROOT_NODE, 'doc', 'hoho'])
+        self.assertEqual(split_and_simplify_xpath('//doc'), [ANY_NUMBER_OF_NODES, 'doc'])
+        self.assertEqual(split_and_simplify_xpath('//doc/node//subnode'),
+                        [ANY_NUMBER_OF_NODES, 'doc', 'node', ANY_NUMBER_OF_NODES, 'subnode'])
+        self.assertEqual(split_and_simplify_xpath('..//doc'), ['..', ANY_NUMBER_OF_NODES, 'doc'])
+
+
+    def test_select_overlay_match(self):
+        def assert_overlay(match1, match2):
+            self.assertTrue(select_nodes_in_match_nodes(Select(match1).parsed_match_nodes[0], Match(match2).parsed_match_nodes[0]), (Select(match1).parsed_match_nodes[0], Match(match2).parsed_match_nodes[0]))
+
+        def assert_not_overlay(match1, match2):
+            self.assertFalse(select_nodes_in_match_nodes(Select(match1).parsed_match_nodes[0], Match(match2).parsed_match_nodes[0]), (Select(match1).parsed_match_nodes[0], Match(match2).parsed_match_nodes[0]))
+
+        assert_overlay('*', '*')
+        assert_overlay('doc', 'doc')
+        assert_overlay('doc', '*')
+        assert_overlay('doc/node', '*/node')
+        assert_overlay('/doc/node', '/*/node')
+        assert_overlay('doc/select/*', 'select/*')
+        assert_overlay('doc/select/node', '*')
+        assert_overlay('//node', 'node')
+        assert_overlay('//node', '*')
+        assert_overlay('node', '*//node')
+        assert_overlay('doc', '//doc')
+        assert_overlay('node//doc', 'node//doc')
+
+        assert_not_overlay('*', 'doc')
+        assert_not_overlay('node/*', 'node/doc')
+        assert_not_overlay('node/*/doc', 'node/somenode/doc')
+        assert_not_overlay('node//doc', 'node/somenode/doc')
+
+    def test_matches_equal(self):
+        def assert_matches_equal(m1, m2):
+            match1 = Match(m1)
+            match2 = Match(m2)
+            self.assertTrue(match1 == match2, '{0} != {1}'.format(match1.parsed_match_nodes, match2.parsed_match_nodes))
+
+        assert_matches_equal('doc', 'doc')
+        assert_matches_equal('doc', 'doc2')
+
+

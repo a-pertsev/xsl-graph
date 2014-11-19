@@ -8,10 +8,11 @@ from collections import defaultdict
 from operator import itemgetter
 from copy import deepcopy
 from functools import partial
+from lxml import etree
 
 import config
 
-from pyxsl.parse import get_xsls_in_dir
+from pyxsl.parse import get_xsls_in_dir, get_tree, is_xsl_tag
 
 
 def extend_one_file_templates(file_name, data_dict):
@@ -72,17 +73,21 @@ def analyze_modes_usage(data_dict):
     return result
 
 
-def fgrep_xsl(words):
+def fgrep_xhh(words, additional_exclude_dirs=[], start_dir=config.ROOT_XHH_DIR):
     empty = []
+
+    exclude_dirs = ['\.git', '\.idea']
+    exclude_dirs.extend(additional_exclude_dirs)
 
     if not words:
         return empty
 
-    os.chdir('/home/apertsev/workspace/hh.sites.main')
+    os.chdir(start_dir)
 
     for word in words:
         try:
-            subprocess.check_output(['fgrep', '-R', '--exclude-dir=\.git', '--exclude-dir=\.idea', word, '.'])
+            command = ['fgrep', '-R'] + ['--exclude-dir={0}'.format(dir) for dir in exclude_dirs] + [word, '.']
+            subprocess.check_output(command)
         except:
             empty.append(word)
 
@@ -92,43 +97,83 @@ def fgrep_xsl(words):
 def get_not_used_xsls(data, index):
     data = deepcopy(data)
 
-    del data[config.ROOT_DIR + '/hh-precompile.xsl']
+    del data[config.ROOT_XSL_DIR + '/hh-precompile.xsl']
 
     res = [f for f in data if f not in index]
-    res = map(lambda path: os.path.relpath(path, config.ROOT_DIR).split('/', 1)[-1], res)
+    res = map(lambda path: os.path.relpath(path, config.ROOT_XSL_DIR).split('/', 1)[-1], res)
 
-    return fgrep_xsl(sorted(list(set(res))))
+    return fgrep_xhh(sorted(list(set(res))))
 
 
 def get_platform(file_name):
     splited = file_name.split(os.path.sep)
     return splited[splited.index('xsl') + 1]
 
+def get_file_ancestors(index, file_name):
+    return index.get(file_name, [])
 
 def get_all_file_ancestors(index, file_name):
-    imported_by = index.get(file_name, [])
+    imported_by = get_file_ancestors(index, file_name)
     return imported_by + list(chain.from_iterable(imap(partial(get_all_file_ancestors, index), imported_by)))
+
+
+def search_class_names(start_dir):
+    classes = set()
+    files = get_xsls_in_dir(start_dir)
+    for xsl in files:
+        for el in get_tree(xsl).getiterator():
+            class_names = el.get('class')
+            if class_names is not None:
+                classes = classes.union(class_names.split(' '))
+            if is_xsl_tag(el, 'attribute') and el.get('name') == 'class':
+                class_names = el.text.split(' ')
+                classes = classes.union(class_names)
+                if el.getchildren():
+                    print 'Some dynamic class defenition in {0}:'.format(xsl)
+                    print etree.tostring(el, pretty_print=True)
+
+    return classes
+
+
+def get_endpoint_xsls(data):
+    page_files = []
+    not_page_files = []
+
+    for xsl_name in data:
+
+        platform, _, path = xsl_name.replace(config.ROOT_XSL_DIR, '').strip('/').partition('/')
+        if path.startswith('pages'):
+            page_files.append(xsl_name)
+        else:
+            not_page_files.append(xsl_name)
+
 
 
 def search_cross_platform_imports(index, start_dir):
     files = get_xsls_in_dir(start_dir)
 
-    for f in files:
-        ancestors = get_all_file_ancestors(index, f)
-        import_platforms = set(imap(get_platform, ancestors))
-        if len(import_platforms) <= 1:
-            print f
+    for file_name in files:
+        file_platform = get_platform(file_name)
+
+        ancestors = get_file_ancestors(index, file_name)
+
+        cross_platform_ancestors = [
+            ancestor for ancestor in ancestors if get_platform(ancestor) != file_platform
+        ]
+
+        if cross_platform_ancestors:
+            print file_name, cross_platform_ancestors
 
 
 def analyze_vars_usage(data):
     for file in data.itervalues():
-        empty = fgrep_xsl(map(lambda x: '$'+x, file['variables']))
+        empty = fgrep_xhh(map(lambda x: '$'+x, file['variables']))
         if empty:
             print empty
 
 def analyze_funcs_usage(data):
     for file in data.itervalues():
-        empty = fgrep_xsl(map(lambda x: x+'(', file['functions']))
+        empty = fgrep_xhh(map(lambda x: x+'(', file['functions']))
         if empty:
             print empty
 

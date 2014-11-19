@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if options.use_pickle:
         data, index = get_data_index_from_pickle()
     else:
-        data, index = get_data_and_index(start_dir=config.ROOT_DIR)
+        data, index = get_data_and_index(start_dir=config.ROOT_XSL_DIR)
         pickle_data_and_index(data, index)
 
     if options.c:
