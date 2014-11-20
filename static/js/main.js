@@ -179,7 +179,8 @@ $(document).ready(function() {
     var $headerContainer = $('#header-container');
     var $header = $('#header');
     var $checkbox = $('#templatesCheckbox');
-    var headerShown = false;
+    var state = 'away';
+    var hideTimer;
 
     loadSvg();
 
@@ -230,21 +231,31 @@ $(document).ready(function() {
     });
 
 
-    $headerContainer.on('mouseover mouseleave', function(e) {
-        var actionShow = (e.type === 'mouseover');
-
-        if (!actionShow) {
+    function toggleHeader(show) {
+        var top = show ? '0px' : '-100px';
+        var duration = show ? 0 : 500;
+        if (!show) {
             $input.autocomplete('close');
         }
+        $header.animate({'top': top}, {duration: duration});
+    }
 
-        if (!actionShow && e.clientY < 0) { return; }
+    $headerContainer.on('mouseover', function(e) {
+        if (state === 'leaving') {
+            window.clearTimeout(hideTimer);
+        } else if (state === 'away') {
+            toggleHeader(true);
+        }
+        state = 'over';
+    });
 
-        if (actionShow !== headerShown) {
-            var top = actionShow ? '0px' : '-100px';
-            var duration = actionShow ? 0 : 500;
-            headerShown = !headerShown;
-
-            $header.animate({'top': top}, {duration: duration});
+    $headerContainer.on('mouseleave', function(e) {
+        if (state === 'over') {
+            hideTimer = window.setTimeout(function() {
+                toggleHeader(false);
+                state = 'away';
+            }, 300);
+            state = 'leaving';
         }
     }.bind(this));
 
