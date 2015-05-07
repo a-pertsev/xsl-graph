@@ -69,7 +69,7 @@ def draw_inside(graph, data, search_files=None, draw_dir=None):
 
 
 
-def draw_related_outside(graph, index, search_files, drawn_nodes, drawn_edges):
+def draw_related_outside(graph, index, search_files, drawn_nodes, drawn_edges, depth=None):
     for search_file in search_files:
         imported_by = index.get(search_file)
         if imported_by is None:
@@ -89,13 +89,18 @@ def draw_related_outside(graph, index, search_files, drawn_nodes, drawn_edges):
                 gv.edge(graph, os.path.relpath(imp, config.ROOT_XSL_DIR), os.path.relpath(search_file, config.ROOT_XSL_DIR))
                 drawn_edges.append((imp,file))
 
-        draw_related_outside(graph, index, imported_by, drawn_nodes, drawn_edges)
+        if depth is not None:
+            depth -= 1
 
-def draw_outside(graph, index, search_files=None, draw_dir=None):
+        if depth != 0:
+            draw_related_outside(graph, index, imported_by, drawn_nodes, drawn_edges, depth)
+
+
+def draw_outside(graph, index, search_files=None, draw_dir=None, limit=None):
     if search_files is not None:
-        draw_related_outside(graph, index, search_files, [], [])
+        draw_related_outside(graph, index, search_files, [], [], limit)
     elif draw_dir is not None:
-        draw_related_outside(graph, index, get_xsls_in_dir(draw_dir), [], [])
+        draw_related_outside(graph, index, get_xsls_in_dir(draw_dir), [], [], limit)
     else:
         for file_name, imported_by in index.iteritems():
             gv.node(graph, '{0}'.format(file_name))

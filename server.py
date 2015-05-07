@@ -41,6 +41,8 @@ class SVGImportsHandler(tornado.web.RequestHandler):
     def get(self):
         file = str(os.path.join(config.ROOT_XSL_DIR, self.get_argument('file', 'ambient/blocks/page.xsl')))
 
+        limit = self.get_argument('limit_out', None)
+
         graph = create_graph()
 
         graph = draw_inside(
@@ -53,6 +55,7 @@ class SVGImportsHandler(tornado.web.RequestHandler):
             graph=graph,
             index=data_cache.index,
             search_files=[file],
+            limit=limit,
         )
 
         result = render_graph(graph)
