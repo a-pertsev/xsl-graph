@@ -19,7 +19,7 @@ import cache
 
 import pyxsl.analyze as analyze
 from pyxsl.parse import get_data_and_index, get_data
-from pyxsl.draw import draw_outside, draw_inside, render_graph, create_graph
+from pyxsl.draw import render_graph, create_graph, Drawer
 from pyxsl.pick import pickle_data_and_index, get_data_index_from_pickle
 
 
@@ -43,20 +43,12 @@ class SVGImportsHandler(tornado.web.RequestHandler):
 
         limit = self.get_argument('limit_out', None)
 
+        drawer = Drawer(data_cache.data, data_cache.index)
+
         graph = create_graph()
 
-        graph = draw_inside(
-            graph=graph,
-            data=data_cache.data,
-            search_files=[file],
-        )
-
-        graph = draw_outside(
-            graph=graph,
-            index=data_cache.index,
-            search_files=[file],
-            limit=limit,
-        )
+        drawer.draw_inside(graph, [file])
+        drawer.draw_outside(graph, [file], limit=limit)
 
         result = render_graph(graph)
 
