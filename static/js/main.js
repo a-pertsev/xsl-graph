@@ -17,35 +17,33 @@ function initSvg() {
     $('#zoomIn').on('click', zoomIn.bind(window, 1.5));
 
     $svg.on('mousewheel', function(e) {
+        var zoomK = 1.3;
         var event = e.originalEvent;
         e.preventDefault();
 
-        var zoomK = 1.1;
-
-        var direction = event.wheelDelta > 0 ? -1 : 1;
-
-        var leftMargin = parseInt($svg.css('margin-left'), 10);
-        var topMargin = parseInt($svg.css('margin-top'), 10);
-
         var offset = $svg.offset();
-
-        var dx = (event.layerX - offset.left) * (1 - zoomK) * direction;
-        var dy = (event.layerY - offset.top) * (1 - zoomK) * direction;
-
-        console.log('dx=' + dx + ', dy=' + dy);
+        var onSvgX =  event.pageX - offset.left;
+        var onSvgY = event.pageY - offset.top;
+        var k = (event.wheelDelta > 0 ? zoomK : 1 / zoomK) - 1;
+        var dx = onSvgX * k;
+        var dy = onSvgY * k;
 
         (event.wheelDelta > 0 ? zoomIn : zoomOut)(zoomK);
 
-        if (document.body.scrollHeight === document.body.clientHeight) {
-            $svg.css('margin-top', topMargin + dy + 'px');
+        var marginDx = window.scrollX + dx;
+        if (marginDx < 0) {
+            window.scrollBy(-window.scrollX, 0);
+            $svg.css('margin-left', 0);
         } else {
-            window.scrollBy(window.scrollX, dy);
+            window.scrollBy(dx, 0);
         }
 
-        if (document.body.scrollWidth === document.body.clientWidth) {
-            $svg.css('margin-left', leftMargin - dx + 'px');
+        var marginDy = window.scrollY + dy;
+        if (marginDy < 0) {
+            window.scrollBy(0, -window.scrollY);
+            $svg.css('margin-top', 0);
         } else {
-            window.scrollBy(dx, window.scrollY);
+            window.scrollBy(0, dy);
         }
     });
 
@@ -60,9 +58,6 @@ function highlightEdge(edge) {
     edge.path.setAttribute('stroke', 'red');
 }
 
-function highlighElement(elem, color) {
-
-}
 
 function highlight(elem, c) {
     'use strict';
