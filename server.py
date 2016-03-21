@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os.path
+import os
 import simplejson
 import logging
 import logging.handlers
@@ -129,8 +129,10 @@ if __name__ == "__main__":
 
     ])
 
-    application.listen(8888)
+    port = os.environ.get('PORT', config.PORT)
+    application.listen(port)
     io_loop = tornado.ioloop.IOLoop.instance()
+    logging.getLogger(name='appLogger').info('instance started at http://localhost:{}'.format(port))
 
     tornado.autoreload.start(io_loop, 1000)
     io_loop.start()
