@@ -7,8 +7,6 @@ sudo apt-get install python-dev
 
 pip install pygraphviz
 
-mkdir pickled
-
 nano config.py
 
 Usage example:
