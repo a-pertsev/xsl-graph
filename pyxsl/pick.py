@@ -4,6 +4,9 @@ import os
 import pickle
 import config
 
+if not os.path.exists(config.PICKLE_DIR):
+    os.makedirs(config.PICKLE_DIR)
+
 
 def pickle_data_and_index(data, index):
     with open(config.PICKLE_NAME, 'w') as f:
