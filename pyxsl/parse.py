@@ -46,7 +46,7 @@ def parse_file(xsl_file_name, from_file):
 
 
     for el in tree.getiterator():
-        if is_xsl_tag(el, 'import'):
+        if is_xsl_tag(el, 'import') or is_xsl_tag(el, 'include'):
             result['imports'].append(os.path.abspath(os.path.join(current_dir, el.get('href'))))
 
         elif is_xsl_tag(el, 'template'):

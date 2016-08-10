@@ -1,8 +1,13 @@
 xsl-graph
 =========
 
-Usage example:
- ./draw.py -c --file=/home/apertsev/workspace/hh.sites.main/xhh/xsl/sochi/employer-deeds.xsl
+sudo apt-get install libgv-python graphviz libgraphviz-dev pkg-config
 
-See also:
- ./draw.py --help
+sudo apt-get install python-dev
+
+pip install pygraphviz
+
+nano config.py
+
+Usage example:
+ ./server.py
